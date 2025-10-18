@@ -1,47 +1,90 @@
-// 기존 api.jsx에서 api 인스턴스를 가져와서 사용
-import api from './api';
-import { apiUrl } from '../config/environment';
+import axios from 'axios';
+import { environment } from '../config/environment';
 
-// 서버 URL 설정 (환경별 자동 감지)
-const API_BASE_URL = apiUrl;
+// Axios 인스턴스 생성
+const apiClient = axios.create({
+  baseURL: `${environment.API_URL}/api/auth`,
+  withCredentials: true,
+  timeout: 10000,
+});
+
+// 요청 인터셉터
+apiClient.interceptors.request.use(
+  (config) => {
+    console.log('API 요청:', config.url);
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// 응답 인터셉터
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+// 응답 인터셉터 - 세션 만료 처리
+authApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // 세션 만료 시 로그인 페이지로 리다이렉트
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // 인증 관련 API 함수들
-export const authAPIService = {
+export const authApi = {
   // 회원가입
-  register: async (userData) => {
-    return await api.post('/api/auth/register', userData);
-  },
+  register: (name, email, password) =>
+    authApi.post('/register', { name, email, password }),
 
   // 로그인
-  login: async (credentials) => {
-    return await api.post('/api/auth/login', credentials);
-  },
+  login: (email, password) =>
+    authApi.post('/login', { email, password }),
 
   // 로그아웃
-  logout: async () => {
-    return await api.post('/api/auth/logout');
-  },
+  logout: () =>
+    authApi.post('/logout'),
 
   // 현재 사용자 정보 조회
-  getCurrentUser: async () => {
-    return await api.get('/api/auth/me');
-  },
+  getCurrentUser: () =>
+    authApi.get('/me'),
 
-  // OAuth 로그인 URL 생성
-  getGoogleLoginUrl: () => `${API_BASE_URL}/api/auth/google`,
-  getNaverLoginUrl: () => `${API_BASE_URL}/api/auth/naver`,
+  // Google OAuth 로그인 URL 생성
+  getGoogleAuthUrl: () =>
+    authApi.get('/google/url'),
+
+  // Naver OAuth 로그인 URL 생성
+  getNaverAuthUrl: () =>
+    authApi.get('/naver/url'),
+
+  // OAuth 콜백 처리
+  handleOAuthCallback: (provider, code) =>
+    authApi.post(`/${provider}/callback`, { code }),
 
   // 관리자 전용 API
-  // 모든 사용자 목록 조회
-  getAllUsers: async () => {
-    return await api.get('/api/users/all');
-  },
+  admin: {
+    // 모든 사용자 목록 조회
+    getUsers: () =>
+      authApi.get('/admin/users'),
 
-  // 사용자 유형 변경
-  changeUserType: async (userId, userType) => {
-    return await api.put(`/api/users/${userId}/type`, { userType });
-  },
+    // 사용자 권한 변경
+    updateUserType: (userId, userType) =>
+      authApi.put(`/admin/users/${userId}`, { userType }),
+
+    // 사용자 삭제
+    deleteUser: (userId) =>
+      authApi.delete(`/admin/users/${userId}`)
+  }
 };
 
-// 기존 api 인스턴스를 authAPI로도 내보내기 (하위 호환성)
-export { api as authAPI };
+export default authApi;
