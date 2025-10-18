@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { restaurantAPI } from '../services/api';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
-import { authAPIService } from '../services/authApi';
+// 1. 'authAPIService'를 'authApi'로 변경
+import { authApi } from '../services/authApi';
 
 const Container = styled.div`
   padding: 2rem 0;
@@ -138,7 +139,8 @@ function AdminPage() {
 
   const { data: usersData, isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ['users'],
-    queryFn: authAPIService.getAllUsers,
+    // 2. 'authAPIService.getAllUsers'를 'authApi.admin.getUsers'로 변경
+    queryFn: authApi.admin.getUsers,
     enabled: activeTab === 'users',
     retry: 1,
   });
@@ -181,7 +183,8 @@ function AdminPage() {
   });
 
   const changeUserTypeMutation = useMutation({
-    mutationFn: ({ userId, userType }) => authAPIService.changeUserType(userId, userType),
+    // 3. 'authAPIService.changeUserType'을 'authApi.admin.updateUserType'으로 변경
+    mutationFn: ({ userId, userType }) => authApi.admin.updateUserType(userId, userType),
     onSuccess: () => {
       toast.success('사용자 유형이 변경되었습니다.');
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -236,7 +239,7 @@ function AdminPage() {
   const onChangeUserType = async (user, newUserType) => {
     const userTypeText = newUserType === 'admin' ? '관리자' : '일반 사용자';
     if (!confirm(`${user.name}님의 유형을 ${userTypeText}로 변경할까요?`)) return;
-    
+
     try {
       await changeUserTypeMutation.mutateAsync({ userId: user._id, userType: newUserType });
     } catch (error) {
@@ -244,7 +247,7 @@ function AdminPage() {
     }
   };
 
-  const categories = useMemo(() => ['한식','중식','일식','양식','아시안','분식','카페','기타'], []);
+  const categories = useMemo(() => ['한식', '중식', '일식', '양식', '아시안', '분식', '카페', '기타'], []);
 
   if (isLoading || usersLoading) {
     return (
@@ -256,7 +259,7 @@ function AdminPage() {
       </Container>
     );
   }
-  
+
   if (error || usersError) {
     return (
       <Container>
@@ -271,16 +274,16 @@ function AdminPage() {
   return (
     <Container>
       <Title>관리자 페이지</Title>
-      
+
       <TabContainer>
-        <TabButton 
-          active={activeTab === 'restaurants'} 
+        <TabButton
+          active={activeTab === 'restaurants'}
           onClick={() => setActiveTab('restaurants')}
         >
           레스토랑 관리
         </TabButton>
-        <TabButton 
-          active={activeTab === 'users'} 
+        <TabButton
+          active={activeTab === 'users'}
           onClick={() => setActiveTab('users')}
         >
           사용자 관리
@@ -289,84 +292,84 @@ function AdminPage() {
 
       {activeTab === 'restaurants' && (
         <Grid>
-        <Panel>
-          <Table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>이름</th>
-                <th>카테고리</th>
-                <th>평점</th>
-                <th>위치</th>
-                <th>액션</th>
-              </tr>
-            </thead>
-            <tbody>
-              {restaurants.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.id}</td>
-                  <td>{r.name}</td>
-                  <td>{r.category}</td>
-                  <td>{r.rating}</td>
-                  <td>{r.location}</td>
-                  <td>
-                    <Actions>
-                      <Button onClick={() => onEdit(r)}>수정</Button>
-                      <Danger onClick={() => onDelete(r)}>삭제</Danger>
-                    </Actions>
-                  </td>
+          <Panel>
+            <Table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>이름</th>
+                  <th>카테고리</th>
+                  <th>평점</th>
+                  <th>위치</th>
+                  <th>액션</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Panel>
-
-        <Panel>
-          <h3>{selected ? `수정: ${selected.name}` : '새 레스토랑 추가'}</h3>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <FormRow>
-              <label htmlFor="name">이름 *</label>
-              <Input id="name" {...register('name', { required: '이름은 필수입니다' })} />
-            </FormRow>
-            <FormRow>
-              <label htmlFor="category">카테고리 *</label>
-              <Select id="category" {...register('category', { required: '카테고리는 필수입니다' })}>
-                <option value="">선택</option>
-                {categories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+              </thead>
+              <tbody>
+                {restaurants.map((r) => (
+                  <tr key={r.id}>
+                    <td>{r.id}</td>
+                    <td>{r.name}</td>
+                    <td>{r.category}</td>
+                    <td>{r.rating}</td>
+                    <td>{r.location}</td>
+                    <td>
+                      <Actions>
+                        <Button onClick={() => onEdit(r)}>수정</Button>
+                        <Danger onClick={() => onDelete(r)}>삭제</Danger>
+                      </Actions>
+                    </td>
+                  </tr>
                 ))}
-              </Select>
-            </FormRow>
-            <FormRow>
-              <label htmlFor="location">위치 *</label>
-              <Input id="location" {...register('location', { required: '위치는 필수입니다' })} />
-            </FormRow>
-            <FormRow>
-              <label htmlFor="priceRange">가격대</label>
-              <Input id="priceRange" {...register('priceRange')} />
-            </FormRow>
-            <FormRow>
-              <label htmlFor="rating">평점</label>
-              <Input id="rating" type="number" step="0.01" min="0" max="5" {...register('rating')} />
-            </FormRow>
-            <FormRow>
-              <label htmlFor="recommendedMenu">추천 메뉴</label>
-              <Textarea id="recommendedMenu" {...register('recommendedMenu')} placeholder="쉼표 또는 줄바꿈으로 구분" />
-            </FormRow>
-            <FormRow>
-              <label htmlFor="image">이미지 URL</label>
-              <Input id="image" {...register('image')} />
-            </FormRow>
-            <FormRow>
-              <label htmlFor="description">설명</label>
-              <Textarea id="description" {...register('description')} />
-            </FormRow>
-            <Actions>
-              <Button type="submit" disabled={isSubmitting}>{selected ? '수정' : '생성'}</Button>
-              <Button type="button" onClick={onResetForm}>초기화</Button>
-            </Actions>
-          </form>
-        </Panel>
+              </tbody>
+            </Table>
+          </Panel>
+
+          <Panel>
+            <h3>{selected ? `수정: ${selected.name}` : '새 레스토랑 추가'}</h3>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <FormRow>
+                <label htmlFor="name">이름 *</label>
+                <Input id="name" {...register('name', { required: '이름은 필수입니다' })} />
+              </FormRow>
+              <FormRow>
+                <label htmlFor="category">카테고리 *</label>
+                <Select id="category" {...register('category', { required: '카테고리는 필수입니다' })}>
+                  <option value="">선택</option>
+                  {categories.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </Select>
+              </FormRow>
+              <FormRow>
+                <label htmlFor="location">위치 *</label>
+                <Input id="location" {...register('location', { required: '위치는 필수입니다' })} />
+              </FormRow>
+              <FormRow>
+                <label htmlFor="priceRange">가격대</label>
+                <Input id="priceRange" {...register('priceRange')} />
+              </FormRow>
+              <FormRow>
+                <label htmlFor="rating">평점</label>
+                <Input id="rating" type="number" step="0.01" min="0" max="5" {...register('rating')} />
+              </FormRow>
+              <FormRow>
+                <label htmlFor="recommendedMenu">추천 메뉴</label>
+                <Textarea id="recommendedMenu" {...register('recommendedMenu')} placeholder="쉼표 또는 줄바꿈으로 구분" />
+              </FormRow>
+              <FormRow>
+                <label htmlFor="image">이미지 URL</label>
+                <Input id="image" {...register('image')} />
+              </FormRow>
+              <FormRow>
+                <label htmlFor="description">설명</label>
+                <Textarea id="description" {...register('description')} />
+              </FormRow>
+              <Actions>
+                <Button type="submit" disabled={isSubmitting}>{selected ? '수정' : '생성'}</Button>
+                <Button type="button" onClick={onResetForm}>초기화</Button>
+              </Actions>
+            </form>
+          </Panel>
         </Grid>
       )}
 
@@ -391,8 +394,8 @@ function AdminPage() {
                   <td>{user.email}</td>
                   <td>
                     <ProviderBadge provider={user.provider}>
-                      {user.provider === 'google' ? '구글' : 
-                       user.provider === 'naver' ? '네이버' : '이메일'}
+                      {user.provider === 'google' ? '구글' :
+                        user.provider === 'naver' ? '네이버' : '이메일'}
                     </ProviderBadge>
                   </td>
                   <td>
@@ -425,5 +428,3 @@ function AdminPage() {
 }
 
 export default AdminPage;
-
-

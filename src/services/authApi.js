@@ -29,61 +29,52 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-// 응답 인터셉터 - 세션 만료 처리
-authApi.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // 세션 만료 시 로그인 페이지로 리다이렉트
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+
+// (!!!) authApi를 사용한 중복 인터셉터 블록 삭제 (!!!)
 
 // 인증 관련 API 함수들
 export const authApi = {
   // 회원가입
   register: (name, email, password) =>
-    authApi.post('/register', { name, email, password }),
+    apiClient.post('/register', { name, email, password }), // <-- apiClient로 변경
 
   // 로그인
   login: (email, password) =>
-    authApi.post('/login', { email, password }),
+    apiClient.post('/login', { email, password }), // <-- apiClient로 변경
 
   // 로그아웃
   logout: () =>
-    authApi.post('/logout'),
+    apiClient.post('/logout'), // <-- apiClient로 변경
 
   // 현재 사용자 정보 조회
   getCurrentUser: () =>
-    authApi.get('/me'),
+    apiClient.get('/me'), // <-- apiClient로 변경
 
   // Google OAuth 로그인 URL 생성
   getGoogleAuthUrl: () =>
-    authApi.get('/google/url'),
+    apiClient.get('/google/url'), // <-- apiClient로 변경
 
   // Naver OAuth 로그인 URL 생성
   getNaverAuthUrl: () =>
-    authApi.get('/naver/url'),
+    apiClient.get('/naver/url'), // <-- apiClient로 변경
 
   // OAuth 콜백 처리
   handleOAuthCallback: (provider, code) =>
-    authApi.post(`/${provider}/callback`, { code }),
+    apiClient.post(`/${provider}/callback`, { code }), // <-- apiClient로 변경
 
   // 관리자 전용 API
   admin: {
     // 모든 사용자 목록 조회
     getUsers: () =>
-      authApi.get('/admin/users'),
+      apiClient.get('/admin/users'), // <-- apiClient로 변경
 
     // 사용자 권한 변경
     updateUserType: (userId, userType) =>
-      authApi.put(`/admin/users/${userId}`, { userType }),
+      apiClient.put(`/admin/users/${userId}`, { userType }), // <-- apiClient로 변경
 
     // 사용자 삭제
     deleteUser: (userId) =>
-      authApi.delete(`/admin/users/${userId}`)
+      apiClient.delete(`/admin/users/${userId}`) // <-- apiClient로 변경
   }
 };
 
